@@ -1,0 +1,82 @@
+# This program developed in google colab environment. Thsi program will read the audio file (mp3) and generate text output in markdown format
+
+#imports
+
+import os
+import io
+import requests
+from IPython.display import Markdown, display, update_display
+from openai import OpenAI
+from google.colab import drive
+from google.colab import userdata
+from google.colab import files
+from huggingface_hub import login
+from google.colab import userdata
+from transformers import AutoTokenizer, AutoModelForCausalLM, TextStreamer, BitsAndBytesConfig
+import torch
+import gradio as gr
+
+#constants
+
+AUDIO_MODEL = "whisper-1"
+#LLAMA = "meta-llama/Meta-Llama-3.1-8B-Instruct"
+
+# Connect this colab tomy google drive
+
+#drive.mount('/content/drive')
+#audio_filename = "/content/drive/MyDrive/llms/s1recording.mp3"
+
+# Setting huggubgface key in google colab
+hf_token = userdata.get('HF_TOKEN')
+login(token=hf_token)
+
+# setting openai key in google colab
+openai_api_key = userdata.get('OPENAI_API_KEY')
+openai = OpenAI(api_key=openai_api_key)
+
+# reading audio (mp3) file
+from google.colab import files
+audio_filename_dict = files.upload() # select file manually
+# Assuming a single file was uploaded, get the filename from the dictionary key
+audio_filename = list(audio_filename_dict.keys())[0]
+
+with open(audio_filename, "rb") as f:
+  audio_file = open(audio_filename, "rb")
+
+# calling openai transcription function
+transcription = openai.audio.transcriptions.create(
+    model=AUDIO_MODEL,
+    file=audio_file,
+    response_format="text"
+)
+
+print(transcription)
+
+# calling openai completion LLM function
+response = openai.chat.completions.create(
+    model="gpt-4.1-mini",   # you can also use gpt-4.1 or gpt-5 if available
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant that summarizes text into Markdown."},
+        {"role": "user", "content": f"Summarize the following text into Markdown:\n\n{transcription}"}
+    ]
+)
+
+# generating summary in markdown format
+summary = response.choices[0].message.content
+
+print("Markdown Summary:\n")
+
+sentences = transcription.split('.')
+formatted_text = ""
+for i, sentence in enumerate(sentences):
+  formatted_text += sentence + "."
+  if i < len(sentences) - 1: # Add a newline for all but the last sentence
+       formatted_text += "\n"
+
+#print(summary)
+display(Markdown(summary))
+display(Markdown(formatted_text))
+
+#print("Markdown Summary:\n",formatted_text)
+
+
