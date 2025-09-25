@@ -27,7 +27,7 @@ AUDIO_MODEL = "whisper-1"
 #drive.mount('/content/drive')
 #audio_filename = "/content/drive/MyDrive/llms/s1recording.mp3"
 
-# Setting huggubgface key in google colab
+# Setting huggingface key in google colab
 hf_token = userdata.get('HF_TOKEN')
 login(token=hf_token)
 
